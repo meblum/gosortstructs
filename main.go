@@ -171,45 +171,12 @@ func fieldName(x interface{}) *dst.Ident {
 // fields of the struct based on specified flags
 func (c *config) modify(f *dst.File) (*dst.File, error) {
 	var foundOne bool
-	sortStructs := func(x dst.Node) bool {
+
+	var sortStructFields func(*dst.StructType)
+	sortStructFields = func(s *dst.StructType) {
 		var anon = []structType{}
 
-		// we need TypeSpec so as to
-		// parse the name of the struct
-		t, ok := x.(*dst.TypeSpec)
-		if !ok {
-			return true
-		}
-
-		if t.Type == nil {
-			return true
-		}
-
-		// if --struct is passed and no matches
-		// found, return appropriate response
-		if c.strct != "" && t.Name.Name == c.strct {
-			foundOne = true
-		}
-
-		// if this is the struct we want to modify
-		// get the StructType type and begin modification
-		s, ok := t.Type.(*dst.StructType)
-		if !ok {
-			return true
-		}
-
-		// now that the current node is indeed a struct
-		// if line number is provided, return if no match
-		if len(c.line) != 0 {
-			// convert dst node to ast and get position
-			startLNo := c.fset.Position(c.dec.Ast.Nodes[x].Pos()).Line
-			endLNo := c.fset.Position(c.dec.Ast.Nodes[x].End()).Line
-			if !(startLNo <= c.start && c.end <= endLNo) {
-				return true
-			}
-		}
-
-		// separate out anonymous fields
+		// Separate out anonymous fields
 		for i := len(s.Fields.List) - 1; i >= 0; i-- {
 			if s.Fields.List[i].Names == nil {
 				anon = append(anon, structType{
@@ -220,8 +187,7 @@ func (c *config) modify(f *dst.File) (*dst.File, error) {
 			}
 		}
 
-		// less functions for sort.Slice()
-
+		// Sort named fields
 		sortFunc := func(i, j int) bool {
 			return s.Fields.List[i].Names[0].Name < s.Fields.List[j].Names[0].Name
 		}
@@ -230,34 +196,68 @@ func (c *config) modify(f *dst.File) (*dst.File, error) {
 			return s.Fields.List[i].Names[0].Name > s.Fields.List[j].Names[0].Name
 		}
 
-		anonRevSortFunc := func(i, j int) bool {
-			return anon[i].Name > anon[j].Name
+		if c.reverse {
+			sort.Slice(s.Fields.List, revSortFunc)
+		} else {
+			sort.Slice(s.Fields.List, sortFunc)
 		}
 
+		// Sort anonymous fields
 		anonSortFunc := func(i, j int) bool {
 			return anon[i].Name < anon[j].Name
 		}
 
-		// sort anonymous fields separately
+		anonRevSortFunc := func(i, j int) bool {
+			return anon[i].Name > anon[j].Name
+		}
+
 		if c.reverse {
-			sort.Slice(s.Fields.List, revSortFunc)
-			if anon != nil {
-				sort.Slice(anon, anonRevSortFunc)
-			}
+			sort.Slice(anon, anonRevSortFunc)
 		} else {
-			sort.Slice(s.Fields.List, sortFunc)
-			if anon != nil {
-				sort.Slice(anon, anonSortFunc)
+			sort.Slice(anon, anonSortFunc)
+		}
+
+		// Append sorted anonymous fields
+		for _, f := range anon {
+			s.Fields.List = append(s.Fields.List, f.node)
+		}
+
+		// Recursively sort nested structs
+		for _, field := range s.Fields.List {
+			if structType, ok := field.Type.(*dst.StructType); ok {
+				sortStructFields(structType)
+			}
+		}
+	}
+
+	sortStructs := func(x dst.Node) bool {
+		t, ok := x.(*dst.TypeSpec)
+		if !ok {
+			return true
+		}
+
+		if t.Type == nil {
+			return true
+		}
+
+		if c.strct != "" && t.Name.Name == c.strct {
+			foundOne = true
+		}
+
+		s, ok := t.Type.(*dst.StructType)
+		if !ok {
+			return true
+		}
+
+		if len(c.line) != 0 {
+			startLNo := c.fset.Position(c.dec.Ast.Nodes[x].Pos()).Line
+			endLNo := c.fset.Position(c.dec.Ast.Nodes[x].End()).Line
+			if !(startLNo <= c.start && c.end <= endLNo) {
+				return true
 			}
 		}
 
-		// append sorted anonymous fields (segregation)
-		if len(anon) != 0 {
-			for _, f := range anon {
-				s.Fields.List = append(s.Fields.List, f.node)
-			}
-		}
-
+		sortStructFields(s)
 		return true
 	}
 
