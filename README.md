@@ -1,5 +1,5 @@
 # gosortstructs
-sorts structs
+sorts structs - forked from [danishprakash/gosortstructs](https://github.com/danishprakash/gosortstructs) to [add support for nested anonymous structs](https://github.com/danishprakash/gosortstructs/issues/1)
 
 ##### What
 A command line tool which uses AST to sort fields of a Go struct for easier readability and better diffs. This tool is meant to be used as an underlying tool for text editors ([vim-plugin](https://github.com/danishprakash/vim-gosortstructs)). The resultant Go code conforms with gofmt but is eventually opinionated.
@@ -35,7 +35,7 @@ type Hotel struct {
 ##### Installation
 
 ```sh
-go install danishpraka.sh/gosortstructs@latest
+go install github.com/meblum/gosortstructs@latest
 ```
 
 #### Usage
@@ -58,6 +58,4 @@ Usage of gosortstructs:
 
 
 #### License
-MIT License
-
-Copyright (c) [Danish Prakash](https://github.com/danishprakash)
+MIT [or GPL?](https://github.com/danishprakash/gosortstructs/issues/3)

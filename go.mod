@@ -1,4 +1,4 @@
-module github.com/danishprakash/gosortstructs
+module github.com/meblum/gosortstructs
 
 go 1.15
 

@@ -11,7 +11,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
@@ -29,16 +28,12 @@ type config struct {
 	dec      *decorator.Decorator
 	df       *dst.File
 	reverse  bool
-	source   string
 	strct    string
 	modified io.Reader
 	write    bool
 	line     string
 	start    int
 	end      int
-}
-
-type offset struct {
 }
 
 // simple wrapper to facilitate sorting
@@ -278,7 +273,7 @@ func (c *config) format(node *dst.File) error {
 	}
 
 	if c.write {
-		err = ioutil.WriteFile(c.file, buf.Bytes(), 0)
+		err = os.WriteFile(c.file, buf.Bytes(), 0)
 		if err != nil {
 			return err
 		}
