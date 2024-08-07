@@ -54,8 +54,3 @@ Usage of gosortstructs:
   -line
         position of the struct/cursor (to be used programmatically)
 ```
-
-
-
-#### License
-MIT [or GPL?](https://github.com/danishprakash/gosortstructs/issues/3)
